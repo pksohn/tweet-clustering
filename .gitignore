@@ -1,0 +1,5 @@
+# ipython notebooks
+.ipynb_checkpoints
+
+# JetBrains
+.idea
