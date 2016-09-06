@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import time
 import multiprocessing
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
 import argparse
 
 
@@ -26,7 +26,7 @@ if args.timeout:
 
 
 # Load data and set up as numpy array
-project = os.path.realpath('./..')
+project = os.path.realpath('./../..')
 datadir = os.path.join(project, 'data')
 
 store = pd.HDFStore(os.path.join(datadir, 'tweets_1M.h5'))
@@ -34,13 +34,9 @@ subset = store.tweets_subset
 
 data = subset.as_matrix(columns=['lat', 'lng'])
 
-def kmeans_fit_timing(data, n):
+def dbscan_epsilon_check():
     """
-    Fit data to a K-means model with n clusters and record processing time to a csv file.
 
-    :param data: Numpy array with data to classify
-    :param n: Number of clusters to generated
-    :return: Processing time (in seconds)
     """
 
     k_means = KMeans(n_clusters=n, init='k-means++', n_init=10)
