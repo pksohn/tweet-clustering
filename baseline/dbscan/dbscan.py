@@ -5,24 +5,26 @@ import multiprocessing
 from sklearn.cluster import DBSCAN
 import argparse
 
-
 # Parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--start')
 parser.add_argument('--stop')
 parser.add_argument('--step')
 parser.add_argument('--timeout')
+parser.add_argument('--samples')
 args = parser.parse_args()
 
-start, end, step, timeout = 1, 10, 1, 10
+start, end, step, timeout, samples = 1, 10, 1, 10, 100
 if args.start:
-    start = int(args.start)
+    start = float(args.start)
 if args.stop:
-    end = int(args.stop)
+    end = float(args.stop)
 if args.step:
-    step = int(args.step)
+    step = float(args.step)
 if args.timeout:
     timeout = float(args.timeout)
+if args.samples:
+    samples = float(args.samples)
 
 
 # Load data and set up as numpy array
@@ -34,30 +36,38 @@ subset = store.tweets_subset
 
 data = subset.as_matrix(columns=['lat', 'lng'])
 
-def dbscan_epsilon_check():
+
+def dbscan_epsilon_check(data, eps, samples):
+    """
+    Fit data to a K-means model with n clusters and record processing time to a csv file.
+
+    :param data: Numpy array with data to classify
+    :param eps: Epsilon, or maximum distance for two samples to be considered in the same neighborhood
+    :param samples: Minimum number of samples in a neighborhood for a point to be considered a core point.
+    :return: Processing time (in seconds)
     """
 
-    """
-
-    k_means = KMeans(n_clusters=n, init='k-means++', n_init=10)
+    dbscan = DBSCAN(eps=eps,
+                    min_samples=samples)
 
     t0 = time.time()
-    k_means.fit(data)
+    dbscan.fit(data)
     t1 = time.time() - t0
 
-    with open('kmeans.csv', mode='a') as timing:
-        timing.write('{},{}\n'.format(n, t1))
+    with open('dbscan.csv', mode='a') as timing:
+        timing.write('{},{}\n'.format(eps, t1))
 
-    print n, t1
+    print 'epsilon: {}, minimum samples: {}, time: {}'.format(eps, samples, t1)
     return t1
 
+
 # Write new csv file
-with open('kmeans.csv', mode='w') as timing:
+with open('dbscan.csv', mode='w') as timing:
     timing.write('clusters,seconds\n')
 
 # Run function and end when processing time reaches a certain threshold
-for n in range(1, end, step):
-    p = multiprocessing.Process(target=kmeans_fit_timing, args=(data, n))
+for eps in range(start, end, step):
+    p = multiprocessing.Process(target=dbscan_epsilon_check, args=(data, eps, samples))
     p.start()
     p.join(timeout)
     if p.is_alive():
