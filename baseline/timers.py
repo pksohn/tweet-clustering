@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import time
+import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans, DBSCAN
 import warnings
 
@@ -46,7 +47,7 @@ def dbscan_baseline(data, eps, samples, filename):
     dbscan.fit(data)
     t1 = time.time() - t0
 
-    clusters = dbscan.labels_.unique()
+    clusters = len(np.unique(dbscan.labels_))
 
     project = os.path.realpath('.')
     csv = os.path.join(project, filename)

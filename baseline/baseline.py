@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import os
 import multiprocessing
@@ -55,8 +56,9 @@ for batchsize in batch_sizes:
 start = 0.1
 stop = 2.0
 step = 0.1
+timeout = 60
 
-for miles in range(start, stop, step):
+for miles in np.arange(start, stop, step):
 
     filename = 'dbscan_from{}_to{}_by{}.csv'.format(start, stop, step)
 

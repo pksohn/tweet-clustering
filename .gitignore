@@ -3,4 +3,4 @@
 
 # JetBrains
 .idea
-.pyc
+*.pyc
