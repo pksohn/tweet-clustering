@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import multiprocessing
-import timers
-
+import sample_counters
 
 # Load data and set up as numpy array
 project = os.path.realpath('./..')
@@ -17,10 +16,12 @@ data = subset.as_matrix(columns=['lat', 'lng'])
 # K-means testing: increase clusters until timeout
 
 timeout = 60
-step = 5
+step = 100
+k = 100
 
-for k in range(1, 1000, step):
-    p = multiprocessing.Process(target=timers.kmeans_baseline, args=(data, k, 'kmeans_by{}.csv'.format(step)))
+for n in range(100, 100000, step):
+    p = multiprocessing.Process(target=sample_counters.kmeans_samples, args=(data, k, n,
+                                                                             'kmeans_scale_by{}.csv'.format(step)))
     p.start()
     p.join(timeout)
     if p.is_alive():
@@ -33,15 +34,16 @@ for k in range(1, 1000, step):
 
 batch_sizes = [5, 10, 20, 50, 100]
 timeout = 60
-step = 50
+step = 100
+k = 100
 
 for batchsize in batch_sizes:
 
-    for k in range(1, 50000, step):
+    for n in range(100, 100000, step):
 
-        filename = 'minibatch_by{}_batchsize{}.csv'.format(step, batchsize)
+        filename = 'minibatch_scale_by{}_batchsize{}.csv'.format(step, batchsize)
 
-        p = multiprocessing.Process(target=timers.minibatch_timing, args=(data, k, batchsize, filename))
+        p = multiprocessing.Process(target=sample_counters.minibatch_samples, args=(data, k, n, batchsize, filename))
         p.start()
         p.join(timeout)
         if p.is_alive():
@@ -53,20 +55,15 @@ for batchsize in batch_sizes:
 # DBSCAN testing:
 
 # Distances in miles
-start = 0.1
-stop = 2.0
-step = 0.1
+eps = 1.792
+step = 100
 timeout = 60
 
-for miles in np.arange(start, stop, step):
+for n in range(100, 100000, step):
 
-    filename = 'dbscan_from{}_to{}_by{}.csv'.format(start, stop, step)
+    filename = 'dbscan_scale_by{}.csv'.format(step)
 
-    # Rough approximation: 100 km / 1 degree lat or long
-    kilometers = miles / 0.621371
-    epsilon_degrees = kilometers / 100
-
-    p = multiprocessing.Process(target=timers.dbscan_baseline, args=(data, epsilon_degrees, 100, filename))
+    p = multiprocessing.Process(target=sample_counters.dbscan_samples, args=(data, eps, 100, n, filename))
     p.start()
     p.join(timeout)
     if p.is_alive():
