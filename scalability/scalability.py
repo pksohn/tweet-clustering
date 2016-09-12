@@ -16,7 +16,7 @@ data = subset.as_matrix(columns=['lat', 'lng'])
 # K-means testing: increase clusters until timeout
 
 timeout = 60
-step = 100
+step = 500
 k = 100
 
 for n in range(100, 100000, step):
@@ -34,7 +34,7 @@ for n in range(100, 100000, step):
 
 batch_sizes = [5, 10, 20, 50, 100]
 timeout = 60
-step = 100
+step = 500
 k = 100
 
 for batchsize in batch_sizes:
@@ -56,7 +56,7 @@ for batchsize in batch_sizes:
 
 # Distances in miles
 eps = 1.792
-step = 100
+step = 500
 timeout = 60
 
 for n in range(100, 100000, step):
