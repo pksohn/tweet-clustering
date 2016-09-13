@@ -58,7 +58,7 @@ def dbscan_samples(data, eps, min_samples, n, filename):
 
     if not os.path.exists(csv):
         with open(csv, mode='w') as timing:
-            timing.write('espilon,min_samples,n,clusters,seconds\n')
+            timing.write('epsilon,min_samples,n,clusters,seconds\n')
 
     with open(csv, mode='a') as timing:
         timing.write('{},{},{},{},{}\n'.format(eps, min_samples, n, clusters, t1))

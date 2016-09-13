@@ -54,7 +54,7 @@ def dbscan_baseline(data, eps, samples, filename):
 
     if not os.path.exists(csv):
         with open(csv, mode='w') as timing:
-            timing.write('espilon,samples,clusters,seconds\n')
+            timing.write('epsilon,samples,clusters,seconds\n')
 
     with open(csv, mode='a') as timing:
         timing.write('{},{},{},{}\n'.format(eps, samples, clusters, t1))
