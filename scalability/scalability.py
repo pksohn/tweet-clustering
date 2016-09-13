@@ -53,9 +53,7 @@ for batchsize in batch_sizes:
             break
 
 # DBSCAN testing:
-
-# Distances in miles
-eps = 1.792
+eps = 0.00965606698736
 step = 500
 timeout = 60
 
