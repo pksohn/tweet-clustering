@@ -1,19 +1,21 @@
 # Tweet Clustering
 
-Exploratory data analysis of one million tweets using clustering techniques in scikit-learn.  
+*Exploratory data analysis of one million tweets using clustering techniques in scikit-learn.  
 Civil & Environmental Engineering 263n: Scalable Spatial Analytics at UC-Berkeley, Fall 2016  
-By Paul Sohn, September 14, 2016
+By Paul Sohn, September 14, 2016*
 
-# Part 1: Baseline Results for Different Clustering Algorithms
-
-We will test three different clustering algorithms through the scikit-learn packing in Python:
+The scikit-learn package in Python includes many options for clustering algorithms. We will get to know three of them using a dataset of
+ 1 million tweets (mostly) from the Bay Area. We will start with a random subset of 100,000 tweets to test the algorithms. The clustering algorithms
+ we are using here are: 
 
 * K-means
 * MiniBatch K-means
 * DBSCAN
 
-The first step is to understand the processing limits of each algorithm. The dataset we are using includes 1 million tweets (mostly) from the Bay Area.
- We will start with a random subset of 100,000 tweets to test the algorithms.
+The first step is to understand the processing limits of each algorithm.
+
+
+# Part 1: Baseline Results for Different Clustering Algorithms
 
 ## K-means
 
@@ -29,6 +31,10 @@ print time.time() - t0
 ```
 
 Time to cluster 100,000 tweets into 100 clusters using K-means: **20.7 seconds**
+
+We can implement the above processing time test using various values for the number of requested clusters `k`, increasing `k` until processing time
+reaches an arbitrary threshold above which performance is no longer acceptable (code for this loop is below in Part 2). If we select 60 seconds 
+as the threshold, we find a `k_max` of ~**311 clusters**.  
 
 ## MiniBatch K-means
 
@@ -55,6 +61,19 @@ Batch Size | Time to generate 100 clusters (seconds)
 100 | 0.74
 500 | 0.63
 1000 | 0.70
+
+Like with k-means above, we can find `k_max` for various batch sizes (code for this loop is below in Part 2). If we select 60 seconds 
+as the threshold, we find the following values of `k_max`:
+
+Batch Size | Maximum Number of Clusters
+--- | ---
+5 | 5000
+10 | 5300
+20 | 4950
+50 | 5200
+
+Interestingly, it turns out that the maximum number of clusters does not vary with batch size, but in any case, `k_max` is much, much higher than for the 
+basic K-means algorithm.
 
 ## DBSCAN
 
@@ -108,21 +127,88 @@ In this section, we will expand the baseline results from the previous section t
 
 ### Number of requested clusters
 
-We are now trying to find the processing time of K-means for varying numbers of data samples (consider the range of 100 to 100’000) for a fixed k=100. 
+We can find `k_max` as reported above by looping the K-means model through values of `k` (number of clusters) with the set of 100,000 tweets:
+
+```
+for k in range(2, 10000, 5): # I externally set a timeout of 60 seconds
+    k_means = KMeans(n_clusters=k, init='k-means++', n_init=10)
+
+    t0 = time.time()
+    k_means.fit(data)
+    print time.time() - t0
+```
+
+Results are as follows (Figure 1 in PDF); processing time for the K-means algorithm seems to scale linearly at a rate of 0.181 seconds per cluster. 
+
+![K-means processing time by number of clusters](images/kmeans_scaling_by_clusters.png)
+
+### Number of data points processed
+
+We are now trying to find the processing time of K-means for varying numbers of data samples (consider the range of 100 to 100,000) for a fixed k=100. 
 To achieve this, we simply run a loop fitting the K-means model to random samples of various sizes:
 
 ```
-for n in range(100, 100000, step):
-    k_means = KMeans(n_clusters=k, init='k-means++', n_init=10)
+for n in range(100, 100000, 500):
+    k_means = KMeans(n_clusters=100, init='k-means++', n_init=10)
 
     data = data[numpy.random.randint(low=0, high=len(data), size=n), :]
 
     t0 = time.time()
     k_means.fit(data)
-    t1 = time.time() - t0
+    print time.time() - t0
 ```  
 
-![K-means processing time by number of clusters](images/kmeans_scaling_by_clusters.png)
-
+The results are as follows (Figure 2 in PDF). Again, there is a linear pattern of about 1.84 seconds of processing time per 10,000 additional tweets. Extrapolating this rate, 
+generating 100 clusters from a dataset of 1,000,000 tweets would take about **184 seconds**, three times our acceptable threshold of 60 seconds.  
 
 ![K-means processing time by sample size](images/kmeans_scaling_by_size.png)
+
+## MiniBatch K-means
+
+### Number of requested clusters
+
+We can find `k_max` similarly to above, looping through `k` (number of clusters) as well as values of `batch_size` with the set of 100,000 tweets:
+
+```
+for batch_size in [5, 10, 20, 50, 100]:
+    for k in range(2, 10000, 5): # I externally set a timeout of 60 seconds
+        mb = MiniBatchKMeans(n_clusters=k, init='k-means++', n_init=10, batch_size=batch_size, init_size=max(30, k))
+
+        t0 = time.time()
+        mb.fit(data)
+        print time.time() - t0
+```
+
+Results below (Figure 3) suggest that processing time scales at an increasing rate with number of clusters requested, 
+but of course processing time is much lower than for equivalent numbers of clusters with the basic K-means algorithm.
+
+![Minibatch processing time by number of clusters](images/mb_scaling_by_clusters.png)
+
+### Number of data points processed
+
+We use a similar loop through varying sample sizes (from 100 to 100,000) at `k=100`:
+
+```
+for batch_size in [5, 10, 20, 50, 100]:
+    for n in range(100, 100000, 500): 
+        mb = MiniBatchKMeans(n_clusters=100, init='k-means++', n_init=10, batch_size=batch_size)
+
+        data = data[np.random.randint(low=0, high=len(data), size=n), :]
+
+        t0 = time.time()
+        mb.fit(data)
+        print time.time() - t0
+```  
+
+These results (Figure 4) suggest that processing time for 100 clusters essentially *does not scale* with sample size, at least in the vicinity of our sample sizes.
+So we can expect processing time for 1,000,000 tweets to be between **0-5 seconds**.  
+
+![Minibatch K-means processing time by sample size](images/mb_scaling_by_size.png)
+
+## DBSCAN
+
+### Number of data points processed
+
+Like the other algorithms, we will loop through various sample sizes, this time using a fixed `eps_100=0.009656` that we found above. 
+
+![DBSCAN processing time by sample size](images/db_scaling_by_size.png)
