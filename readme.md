@@ -209,6 +209,61 @@ So we can expect processing time for 1,000,000 tweets to be between **0-5 second
 
 ### Number of data points processed
 
-Like the other algorithms, we will loop through various sample sizes, this time using a fixed `eps_100=0.009656` that we found above. 
+Like the other algorithms, we will loop through various sample sizes (from n=100 to 100,000), this time using a fixed `eps_100=0.009656` that we found above. 
+
+```
+for n in range(100, 100000, 500):
+    dbscan = DBSCAN(eps=eps,
+                    min_samples=min_samples)
+
+    data = data[np.random.randint(low=0, high=len(data), size=n), :]
+
+    t0 = time.time()
+    dbscan.fit(data)
+    print time.time() - t0
+```
+
+I did not set a legend for the results below (Figure 5) but the size of circles is proportional to the number of clusters detected. 
+These results show that this implementation, at this value of `eps`, does scale quite well with sample size, and should process 1,000,000 samples within **15-25 seconds**;
+well within our acceptable range.
 
 ![DBSCAN processing time by sample size](images/db_scaling_by_size.png)
+
+## Summary of scalability
+
+We've learned a couple of things about the three algorithms and how their performance scales:
+
+* K-means does not scale well, in terms of the size of the dataset, and in terms of detecting large numbers of clusters. 
+While getting 100 clusters is not too slow for a sample of n=100,000, this algorithm doesn't perform well for larger datasets. 
+* MiniBatch K-means also does not scale well in terms of number of clusters, but is much faster than the vanilla K-means implementation, depending on batch size.
+* MiniBatch K-means does scale well with larger datasets, if the number of clusters is low (in our example, k=100). This means we can feasibly use this to 
+detect 100 clusters for even a dataset with 1,000,000 samples.
+* DBSCAN can handle relatively large datasets well, at least at certain values of `eps`.' But this algorithm (at least the sklearn implementation) 
+is highly memory-intensive such that clustering 1,000,000 samples is infeasible. 
+
+# Part 3: Handling 1 million samples
+
+Having tested the three algorithms with a smaller dataset of 100,000 samples, we can now turn our attention to the problem of trying to cluster 1,000,000 tweets.
+Specifically, we want to find all clusters with at least 100 samples within a radius of 100 meters.
+The basic limitations of the existing algorithms are as follows:
+
+* K-means is too slow to handle that many data points or that many clusters
+* MiniBatch K-means is also too slow for many clusters, but can handle large data well for a small number of clusters
+* DBSCAN is fast in creating many clusters, but cannot handle datasets beyond a certain size
+
+Our strategy to cluster the 1,000,000 samples is therefore a multi-step process:
+
+* (Step 0): I actually remove data from outside the Bay Area for more accuracy, but this reduces the dataset to ~800,000, making my implementation a bit faster.
+* Step 1: Create 100 (large) clusters with MiniBatch K-means, with a large batch size
+* Step 2: Within each cluster, detect clusters with at least 100 samples within a radius of 100 meters using DBSCAN
+* Step 3: Combining the two clusters identified, label tweets in the full dataset with a unique cluster
+
+The final implementation can be found in `solution.py`.
+
+## Results
+
+Runtime: **17.2 seconds**  
+Clusters detected: **1239**
+
+## Visualized Results
+
