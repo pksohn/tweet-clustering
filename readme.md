@@ -20,7 +20,7 @@ The first step is to understand the processing limits of each algorithm.
 ## K-means
 
 We are trying to find the reference time of clustering of 100K samples into k=100 clusters with k-means.
- The basic python code snippet involves instatiating a KMeans object, fitting to a numpy array (`data`), and printing the time taken: 
+ The basic python code snippet involves instantiating a KMeans object, fitting to a numpy array (`data`), and printing the time taken: 
 
 ```
 k_means = KMeans(n_clusters=100, init='k-means++', n_init=10)
@@ -102,7 +102,7 @@ dbscan.fit(data)
 print len(numpy.unique(dbscan.labels_))
 ```
 
-miles | espilon|clusters|seconds
+miles | epsilon|clusters|seconds
 ---|---|---|---
 0.1 | 0.00160934449789|45|0.873108863831
 0.2 | 0.00321868899579|70|1.11532998085
