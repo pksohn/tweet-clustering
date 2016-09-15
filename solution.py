@@ -11,6 +11,8 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Load data from HDF5 file
+# (I have loaded the JSON data into a pandas DataFrame and stored in
+# an HDF5 file for faster access)
 datadir = os.path.realpath('./data')
 with pd.HDFStore(os.path.join(datadir, 'tweets_1M.h5')) as store:
     tweets = store.tweets
@@ -56,4 +58,3 @@ print('Implementation time: {}'.format(t1))
 # Save results
 with pd.HDFStore(os.path.join(datadir, 'results.h5'), mode='w') as results:
     results['results'] = tweets
-

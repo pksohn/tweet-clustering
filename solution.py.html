@@ -1,0 +1,83 @@
+<html>
+<head>
+<title>solution.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.ln { color: #606366; font-weight: normal; font-style: normal; }
+.s0 { color: rgb(204,120,50); font-weight: bold; }
+.s1 { color: rgb(169,183,198); }
+.s2 { color: rgb(204,120,50); }
+.s3 { color: rgb(128,128,128); }
+.s4 { color: rgb(165,194,97); }
+.s5 { color: rgb(104,151,187); }
+</style>
+</head>
+<BODY BGCOLOR="#2b2b2b">
+<TABLE CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<TR><TD><CENTER>
+<FONT FACE="Arial, Helvetica" COLOR="#000000">
+solution.py</FONT>
+</center></TD></TR></TABLE>
+<pre>
+<a name="l1"><span class="ln">1    </span></a><span class="s0">from </span><span class="s1">__future__ </span><span class="s0">import </span><span class="s1">print_function 
+<a name="l2"><span class="ln">2    </span></a></span><span class="s0">from </span><span class="s1">__future__ </span><span class="s0">import </span><span class="s1">division 
+<a name="l3"><span class="ln">3    </span></a></span><span class="s0">import </span><span class="s1">os 
+<a name="l4"><span class="ln">4    </span></a></span><span class="s0">import </span><span class="s1">time 
+<a name="l5"><span class="ln">5    </span></a></span><span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd 
+<a name="l6"><span class="ln">6    </span></a></span><span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np 
+<a name="l7"><span class="ln">7    </span></a></span><span class="s0">from </span><span class="s1">sklearn.cluster </span><span class="s0">import </span><span class="s1">MiniBatchKMeans</span><span class="s2">, </span><span class="s1">DBSCAN 
+<a name="l8"><span class="ln">8    </span></a> 
+<a name="l9"><span class="ln">9    </span></a></span><span class="s3"># Get rid of sklearn deprecation warnings</span><span class="s1"> 
+<a name="l10"><span class="ln">10   </span></a></span><span class="s0">import </span><span class="s1">warnings 
+<a name="l11"><span class="ln">11   </span></a>warnings.filterwarnings(</span><span class="s4">&quot;ignore&quot;</span><span class="s2">, </span><span class="s1">category=DeprecationWarning) 
+<a name="l12"><span class="ln">12   </span></a> 
+<a name="l13"><span class="ln">13   </span></a></span><span class="s3"># Load data from HDF5 file</span><span class="s1"> 
+<a name="l14"><span class="ln">14   </span></a></span><span class="s3"># (I have loaded the JSON data into a pandas DataFrame and stored in</span><span class="s1"> 
+<a name="l15"><span class="ln">15   </span></a></span><span class="s3"># an HDF5 file for faster access)</span><span class="s1"> 
+<a name="l16"><span class="ln">16   </span></a>datadir = os.path.realpath(</span><span class="s4">'./data'</span><span class="s1">) 
+<a name="l17"><span class="ln">17   </span></a></span><span class="s0">with </span><span class="s1">pd.HDFStore(os.path.join(datadir</span><span class="s2">, </span><span class="s4">'tweets_1M.h5'</span><span class="s1">)) </span><span class="s0">as </span><span class="s1">store: 
+<a name="l18"><span class="ln">18   </span></a>    tweets = store.tweets 
+<a name="l19"><span class="ln">19   </span></a> 
+<a name="l20"><span class="ln">20   </span></a></span><span class="s3"># Constrain to Bay Area</span><span class="s1"> 
+<a name="l21"><span class="ln">21   </span></a>tweets = tweets.loc[(tweets.lat &gt; </span><span class="s5">36.903929764</span><span class="s1">) &amp; 
+<a name="l22"><span class="ln">22   </span></a>                    (tweets.lat &lt; </span><span class="s5">38.853939589</span><span class="s1">) &amp; 
+<a name="l23"><span class="ln">23   </span></a>                    (tweets.lng &gt; -</span><span class="s5">123.528897483</span><span class="s1">) &amp; 
+<a name="l24"><span class="ln">24   </span></a>                    (tweets.lng &lt; -</span><span class="s5">121.213352822</span><span class="s1">)] 
+<a name="l25"><span class="ln">25   </span></a></span><span class="s0">print</span><span class="s1">(</span><span class="s4">'Size of full dataset: {}'</span><span class="s1">.format(len(tweets))) 
+<a name="l26"><span class="ln">26   </span></a> 
+<a name="l27"><span class="ln">27   </span></a></span><span class="s3"># Set index to id for easy matching</span><span class="s1"> 
+<a name="l28"><span class="ln">28   </span></a>tweets.set_index(</span><span class="s4">'id'</span><span class="s2">, </span><span class="s1">inplace=True) 
+<a name="l29"><span class="ln">29   </span></a> 
+<a name="l30"><span class="ln">30   </span></a></span><span class="s3"># Start timing implementation</span><span class="s1"> 
+<a name="l31"><span class="ln">31   </span></a>t0 = time.time() 
+<a name="l32"><span class="ln">32   </span></a> 
+<a name="l33"><span class="ln">33   </span></a></span><span class="s3"># MiniBatch section</span><span class="s1"> 
+<a name="l34"><span class="ln">34   </span></a>mb = MiniBatchKMeans(n_clusters=</span><span class="s5">100</span><span class="s2">, </span><span class="s1">init=</span><span class="s4">'k-means++'</span><span class="s2">, </span><span class="s1">n_init=</span><span class="s5">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s5">1000</span><span class="s1">) 
+<a name="l35"><span class="ln">35   </span></a>data = tweets.as_matrix(columns=[</span><span class="s4">'lat'</span><span class="s2">, </span><span class="s4">'lng'</span><span class="s1">]) 
+<a name="l36"><span class="ln">36   </span></a>mb.fit(data) 
+<a name="l37"><span class="ln">37   </span></a>tweets[</span><span class="s4">'mb_cluster'</span><span class="s1">] = mb.labels_   </span><span class="s3"># Add labels back into DataFrame</span><span class="s1"> 
+<a name="l38"><span class="ln">38   </span></a> 
+<a name="l39"><span class="ln">39   </span></a></span><span class="s3"># DBSCAN section</span><span class="s1"> 
+<a name="l40"><span class="ln">40   </span></a>meters = </span><span class="s5">100      </span><span class="s3"># Transform meters to degrees (roughly)</span><span class="s1"> 
+<a name="l41"><span class="ln">41   </span></a>eps = meters / </span><span class="s5">100000</span><span class="s1"> 
+<a name="l42"><span class="ln">42   </span></a> 
+<a name="l43"><span class="ln">43   </span></a></span><span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">tweets.mb_cluster.unique(): 
+<a name="l44"><span class="ln">44   </span></a>    subset = tweets.loc[tweets.mb_cluster == i] 
+<a name="l45"><span class="ln">45   </span></a>    db = DBSCAN(eps=eps</span><span class="s2">, </span><span class="s1">min_samples=</span><span class="s5">100</span><span class="s1">) 
+<a name="l46"><span class="ln">46   </span></a>    data = subset.as_matrix(columns=[</span><span class="s4">'lat'</span><span class="s2">, </span><span class="s4">'lng'</span><span class="s1">]) 
+<a name="l47"><span class="ln">47   </span></a>    db.fit(data) 
+<a name="l48"><span class="ln">48   </span></a>    subset[</span><span class="s4">'db_cluster'</span><span class="s1">] = db.labels_ 
+<a name="l49"><span class="ln">49   </span></a>    tweets.loc[tweets.mb_cluster == i</span><span class="s2">, </span><span class="s4">'db_cluster'</span><span class="s1">] = subset[</span><span class="s4">'db_cluster'</span><span class="s1">] 
+<a name="l50"><span class="ln">50   </span></a> 
+<a name="l51"><span class="ln">51   </span></a></span><span class="s3"># Set final cluster variable</span><span class="s1"> 
+<a name="l52"><span class="ln">52   </span></a>tweets[</span><span class="s4">'cluster'</span><span class="s1">] = tweets.mb_cluster + (tweets.db_cluster.replace(-</span><span class="s5">1.0</span><span class="s2">, </span><span class="s1">np.nan) / </span><span class="s5">100</span><span class="s1">) 
+<a name="l53"><span class="ln">53   </span></a></span><span class="s0">print</span><span class="s1">(</span><span class="s4">'Number of unique clusters generated: {}'</span><span class="s1">.format(len(tweets.cluster.unique()))) 
+<a name="l54"><span class="ln">54   </span></a> 
+<a name="l55"><span class="ln">55   </span></a>t1 = time.time() - t0 
+<a name="l56"><span class="ln">56   </span></a></span><span class="s0">print</span><span class="s1">(</span><span class="s4">'Implementation time: {}'</span><span class="s1">.format(t1)) 
+<a name="l57"><span class="ln">57   </span></a> 
+<a name="l58"><span class="ln">58   </span></a></span><span class="s3"># Save results</span><span class="s1"> 
+<a name="l59"><span class="ln">59   </span></a></span><span class="s0">with </span><span class="s1">pd.HDFStore(os.path.join(datadir</span><span class="s2">, </span><span class="s4">'results.h5'</span><span class="s1">)</span><span class="s2">, </span><span class="s1">mode=</span><span class="s4">'w'</span><span class="s1">) </span><span class="s0">as </span><span class="s1">results: 
+<a name="l60"><span class="ln">60   </span></a>    results[</span><span class="s4">'results'</span><span class="s1">] = tweets</span></pre>
+</body>
+</html>
