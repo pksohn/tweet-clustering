@@ -4,3 +4,6 @@
 # JetBrains
 .idea
 *.pyc
+
+# Assignment file
+problem.pdf
