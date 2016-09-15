@@ -267,3 +267,34 @@ Clusters detected: **1239**
 
 ## Visualized Results
 
+To bring these results to life, let's take a closer look at a couple of clusters. We'll keep things close to home and try to investigate clusters in Berkeley; 
+my hypothesis is that simply searching for "Berkeley" or "berkeley" in tweet text will bring me clusters on or near campus:
+
+```
+df = results[results['text'].str.contains("berkeley")]
+df['cluster'].value_counts().head()
+```
+
+This returns the list of clusters that have tweets with "berkeley" in them; the one with the most hits is cluster 3.04 which has 4609 tweets in it. 
+We can use Folium to visualize these points on a Leaflet.js map to provide some spatial context. We'll just visualize a subset of 100 random tweets from this 
+cluster for processing speed:
+
+```
+cluster = results[results.cluster == 3.04]
+map_data = folium.Map(location=[cluster.iloc[0,0], cluster.iloc[0,1]], 
+                                tiles='Stamen Toner', zoom_start=14)
+for index, series in cluster.sample(100).iterrows():
+    folium.Marker([series['lat'], 
+                   series['lng']], 
+                   popup=series['text']).add_to(map_data) 
+map_data.save('map.html')
+```
+
+Here are the mapped tweets from cluster 3.04 (Figure 6). It turns out this is on campus!
+
+![Cluster 3.04](images/berkeley_campus.png)
+
+For good measure, I mapped the tweets from the cluster with the second-most tweets with the word 'berkeley' in it as well (Figure 7). 
+It only makes sense that this cluster is in downtown Berkeley. 
+
+![Cluster 3.03](images/berkeley_downtown.png)
